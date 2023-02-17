@@ -4,7 +4,7 @@ import json
 import pkgutil
 
 from jinja2 import Environment
-from jinja2 import FileSystemLoader
+from jinja2 import PackageLoader
 from SuperfacilityAPI import SuperfacilityAccessToken  # noqa: F401
 from SuperfacilityAPI import SuperfacilityAPI  # noqa: F401
 from SuperfacilityAPI.nersc_systems import NERSC_DEFAULT_COMPUTE
@@ -155,8 +155,7 @@ def _generate_slurm_script(slurm_options: dict, cluster_type: str, job_setup: li
             Slurm script.
     """
     # Load in jinja cluster template
-    file_loader = FileSystemLoader('templates')
-    env = Environment(loader=file_loader)
+    env = Environment(loader=PackageLoader('nersc_cluster_deploy'))
     template = env.get_template(f'{cluster_type}.j2')
 
     # Give template user variables
@@ -172,7 +171,7 @@ class slurm_script_template_class:
         Slurm script template generate for jinja2.
 
         Args:
-            slurm_options: dict,
+            slurm_options: dict
                 slurm configuration dictionary.
             job_setup: list or str, optional
                 bash commands to setup the job, by default None.
