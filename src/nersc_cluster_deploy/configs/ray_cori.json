@@ -5,5 +5,5 @@
             "constraint": "haswell",
             "cpus-per-task": "64",
             "nodes": "1"
-        },
+        }
 }

@@ -130,8 +130,7 @@ def _convert_slurm_options(slurm_options: dict | str, cluster_type: str, site: s
 
     # Load default slurm options
     use_gpu_flag = '_gpu' if use_gpu else ''
-    with open(pkgutil.get_data(__name__, f'configs/{cluster_type}_{site}{use_gpu_flag}.json'), 'r') as f:
-        default_slurm_options = json.load(f)['slurm_options']
+    default_slurm_options = json.loads(pkgutil.get_data(__name__, f'configs/{cluster_type}_{site}{use_gpu_flag}.json'))['slurm_options']
 
     # Combine the user and default slurm options
     return {**default_slurm_options, **slurm_options}

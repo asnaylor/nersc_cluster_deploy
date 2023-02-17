@@ -5,6 +5,6 @@
             "constraint": "gpu",
             "cpus-per-task": "128",
             "gpus-per-task": "4",
-            "nodes": "1",
-        },
+            "nodes": "1"
+        }
 }

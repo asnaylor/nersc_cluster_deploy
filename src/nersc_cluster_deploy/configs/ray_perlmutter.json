@@ -5,5 +5,5 @@
             "constraint": "cpu",
             "cpus-per-task": "256",
             "nodes": "1"
-        },
+        }
 }

@@ -7,6 +7,6 @@
             "gpus-per-task": "8",
             "nodes": "1",
             "clusters": "escori",
-            "exclusive": "",
-        },
+            "exclusive": ""
+        }
 }
