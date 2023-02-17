@@ -63,7 +63,8 @@ To use the project:
 .. code-block:: python
 
     from SuperfacilityAPI import SuperfacilityAPI, SuperfacilityAccessToken
-    from nersc_cluster_deploy import deploy_ray_cluster
+    from nersc_cluster_deploy import deploy_ray_cluster, get_ray_cluster_address
+    import ray
 
     api_key = SuperfacilityAccessToken(
         client_id = client_id,
@@ -71,12 +72,41 @@ To use the project:
     )
     sfapi = SuperfacilityAPI(api_key)
 
+    slurm_options = {
+        'qos': 'debug',
+        'account':'<account>',
+        'image': 'nersc/pytorch:ngc-22.09-v0',
+        'nodes': '2',
+        't': '00:30:00'
+    }
+    site = 'perlmutter'
+
     job = deploy_ray_cluster(
-            sfp_api,
-            slurm_options,
-            site
+        sfp_api,
+        slurm_options,
+        site
     )
 
+    #Also supported is
+    slurm_options = '-q debug -a <account> --time=00:20:00 -N 3'
+    site = 'cori'
+
+    job = deploy_ray_cluster(
+        sfp_api,
+        slurm_options,
+        site,
+        use_gpu = False,
+        job_setup = ['module load python', 'conda activate ray_test_env']
+        post_job = 'echo Completed job at: $(date)'
+    )
+
+    #Get ray cluster address to connect
+    cluster_address = get_ray_cluster_address(
+        sfp_api,
+        job['jobid'],
+        site
+    )
+    ray.init(cluster_address)
 
 Development
 ===========

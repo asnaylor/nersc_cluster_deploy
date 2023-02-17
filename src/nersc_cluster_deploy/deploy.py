@@ -88,8 +88,7 @@ def _deploy_cluster(
     slurm_script = _generate_slurm_script(slurm_config, cluster_type, job_setup, post_job)
 
     # Submit Job
-    # return sfp_api.post_job(site, slurm_script, isPath=False) #wait until sucessful test
-    return slurm_script
+    return sfp_api.post_job(site, slurm_script, isPath=False)
 
 
 def _convert_slurm_options(slurm_options: dict | str, cluster_type: str, site: str, use_gpu: bool) -> dict:
