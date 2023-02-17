@@ -49,11 +49,7 @@ Deploy workflow clusters on NERSC supercomputers.
 Installation
 ============
 
-::
-
-    pip install nersc-cluster-deploy
-
-You can also install the in-development version with::
+You can install the in-development version with::
 
     pip install https://github.com/asnaylor/nersc_cluster_deploy/archive/main.zip
 
@@ -66,8 +62,20 @@ To use the project:
 
 .. code-block:: python
 
-    import nersc_cluster_deploy
-    nersc_cluster_deploy.longest()
+    from SuperfacilityAPI import SuperfacilityAPI, SuperfacilityAccessToken
+    from nersc_cluster_deploy import deploy_ray_cluster
+
+    api_key = SuperfacilityAccessToken(
+        client_id = client_id,
+        private_key = private_key
+    )
+    sfapi = SuperfacilityAPI(api_key)
+
+    job = deploy_ray_cluster(
+            sfp_api,
+            slurm_options,
+            site
+    )
 
 
 Development

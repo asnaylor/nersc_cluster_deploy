@@ -1,0 +1,10 @@
+{
+    "slurm_options":
+        {
+            "ntasks-per-node": "1",
+            "constraint": "gpu",
+            "cpus-per-task": "128",
+            "gpus-per-task": "4",
+            "nodes": "1",
+        },
+}

@@ -1,0 +1,25 @@
+{% extends 'base_sbatch.j2' %}
+{% block main %}
+nodes=$(scontrol show hostnames $SLURM_JOB_NODELIST)
+nodes_array=( $nodes )
+head_node_hostname=${nodes_array[0]}
+RAY_HEAD_PORT=6379
+RAY_NODE_ADDRESS=$head_node_hostname:$RAY_HEAD_PORT
+
+echo "[slurm] - Starting ray HEAD"
+srun --nodes=1 --ntasks=1 -w $head_node_hostname {{ job.shifter_flag }} ray start --head --node-ip-address=$head_node_hostname --port=$RAY_HEAD_PORT --block &
+sleep 30
+
+worker_num=$(($SLURM_JOB_NUM_NODES - 1))
+if [[ $worker_num -ne 0 ]]; then
+    echo "[slurm] - Starting $worker_num ray worker nodes"
+    for ((  i=1; i<=$worker_num; i++ ))
+    do
+    node_i=${nodes_array[$i]}
+    echo "    - $i at $node_i"
+    srun --nodes=1 --ntasks=1 -w $node_i {{ job.shifter_flag }} ray start --address $RAY_NODE_ADDRESS --block &
+    done
+fi
+
+sleep infinity
+{% endblock %}
