@@ -108,6 +108,8 @@ To use the project:
     )
     ray.init(cluster_address)
 
+For more information and examples see the `tutorial <tutorial/README.md>`_ folder.
+
 Development
 ===========
 
