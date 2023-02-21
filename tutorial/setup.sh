@@ -45,7 +45,7 @@ setup_shifter_kernel(){
 
     ## Copy files across
     mkdir -p $JUPYTER_KERNEL_FOLDER
-    cp .kernel.json $JUPYTER_KERNEL_FOLDER
+    cp .kernel.json $JUPYTER_KERNEL_FOLDER/kernel.json
     sed -i -e "s#CUSTOM_KERNEL_NAME#$JUPYTER_KERNEL#g" $JUPYTER_KERNEL_FOLDER/kernel.json
     sed -i -e "s#CUSTOM_SHIFTER_IMAGE#$IMAGE_NAME#g" $JUPYTER_KERNEL_FOLDER/kernel.json
     sed -i -e "s#CUSTOM_PYTHON_BIN#$CUSTOM_PYTHON_BIN#g" $JUPYTER_KERNEL_FOLDER/kernel.json
