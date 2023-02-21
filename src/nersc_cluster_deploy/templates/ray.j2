@@ -7,7 +7,7 @@ RAY_HEAD_PORT=6379
 RAY_NODE_ADDRESS=$head_node_hostname:$RAY_HEAD_PORT
 
 echo "[slurm] - Starting ray HEAD"
-srun --nodes=1 --ntasks=1 -w $head_node_hostname {{ job.shifter_flag }} ray start --head --node-ip-address=$head_node_hostname --port=$RAY_HEAD_PORT --block &
+srun --nodes=1 --ntasks=1 -w $head_node_hostname {{ job.srun_flags }} {{ job.shifter_flag }} ray start --head --node-ip-address=$head_node_hostname --port=$RAY_HEAD_PORT --block &
 sleep 30
 
 worker_num=$(($SLURM_JOB_NUM_NODES - 1))
@@ -17,7 +17,7 @@ if [[ $worker_num -ne 0 ]]; then
     do
     node_i=${nodes_array[$i]}
     echo "    - $i at $node_i"
-    srun --nodes=1 --ntasks=1 -w $node_i {{ job.shifter_flag }} ray start --address $RAY_NODE_ADDRESS --block &
+    srun --nodes=1 --ntasks=1 -w $node_i {{ job.srun_flags }} {{ job.shifter_flag }} ray start --address $RAY_NODE_ADDRESS --block &
     done
 fi
 

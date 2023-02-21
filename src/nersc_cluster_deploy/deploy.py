@@ -20,6 +20,7 @@ def deploy_ray_cluster(
     use_gpu: bool = True,
     job_setup: list | str = None,
     post_job: list | str = None,
+    srun_flags: str = '',
 ) -> dict:
     """
     Create and submit a Ray Cluster slurm job.
@@ -37,12 +38,14 @@ def deploy_ray_cluster(
             bash commands to setup the job, by default None.
         post_job: list or str, optional
             bash commands after the job, by default None.
+        srun_flags: str, optional
+                additional srun flags
 
     Returns:
         output_json: dict,
             Return json from sf_api request.
     """
-    return _deploy_cluster(sfp_api, 'ray', slurm_options, site, use_gpu, job_setup, post_job)
+    return _deploy_cluster(sfp_api, 'ray', slurm_options, site, use_gpu, job_setup, post_job, srun_flags)
 
 
 def _deploy_cluster(
@@ -53,6 +56,7 @@ def _deploy_cluster(
     use_gpu: bool,
     job_setup: list | str,
     post_job: list | str,
+    srun_flags: str = '',
 ) -> dict:
     """
     Create and submit cluster slurm job.
@@ -72,6 +76,8 @@ def _deploy_cluster(
             bash commands to setup the job.
         post_job: list or str
             bash commands after the job.
+        srun_flags: str, optional
+                additional srun flags
 
     Returns:
         output_json: dict,
@@ -85,7 +91,7 @@ def _deploy_cluster(
     slurm_config = _convert_slurm_options(slurm_options, cluster_type, site, use_gpu)
 
     # Generate slurm script
-    slurm_script = _generate_slurm_script(slurm_config, cluster_type, job_setup, post_job)
+    slurm_script = _generate_slurm_script(slurm_config, cluster_type, job_setup, post_job, srun_flags)
 
     # Submit Job
     return sfp_api.post_job(site, slurm_script, isPath=False)
@@ -135,7 +141,7 @@ def _convert_slurm_options(slurm_options: dict | str, cluster_type: str, site: s
     return {**default_slurm_options, **slurm_options}
 
 
-def _generate_slurm_script(slurm_options: dict, cluster_type: str, job_setup: list | str = None, post_job: list | str = None) -> str:
+def _generate_slurm_script(slurm_options: dict, cluster_type: str, job_setup: list | str = None, post_job: list | str = None, srun_flags: str = '') -> str:
     """
     Generate and write temporary slurm script.
 
@@ -148,6 +154,8 @@ def _generate_slurm_script(slurm_options: dict, cluster_type: str, job_setup: li
             bash commands to setup the job, by default None.
         post_job: list or str, optional
             bash commands after the job, by default None.
+        srun_flags: str, optional
+                additional srun flags
 
     Returns:
         slurm_script: str,
@@ -158,14 +166,14 @@ def _generate_slurm_script(slurm_options: dict, cluster_type: str, job_setup: li
     template = env.get_template(f'{cluster_type}.j2')
 
     # Give template user variables
-    slurm_script_template = slurm_script_template_class(slurm_options, job_setup, post_job)
+    slurm_script_template = slurm_script_template_class(slurm_options, job_setup, post_job, srun_flags)
 
     # Render slurm script
     return template.render(job=slurm_script_template)
 
 
 class slurm_script_template_class:
-    def __init__(self, sbatch_options, job_setup: list | str = None, post_job: list | str = None):
+    def __init__(self, sbatch_options, job_setup: list | str = None, post_job: list | str = None, srun_flags: str = ''):
         """
         Slurm script template generate for jinja2.
 
@@ -176,10 +184,13 @@ class slurm_script_template_class:
                 bash commands to setup the job, by default None.
             post_job: list or str, optional
                 bash commands after the job, by default None.
+            srun_flags: str, optional
+                additional srun flags
 
         """
         self.sbatch_options = sbatch_options
         self.shifter_flag = 'shifter' if 'image' in sbatch_options else ''
+        self.srun_flags = srun_flags
         self.job_setup = job_setup
         self.post_job = post_job
 
