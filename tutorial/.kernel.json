@@ -1,0 +1,16 @@
+{
+    "argv": [
+        "shifter",
+        "--image=CUSTOM_SHIFTER_IMAGE",
+        "CUSTOM_PYTHON_BIN",
+        "-m",
+        "ipykernel_launcher",
+        "-f",
+        "{connection_file}"
+    ],
+    "env": {
+        "PYTHONUSERBASE": "CUSTOM_PYTHONUSERBASE"
+    },
+    "display_name": "CUSTOM_KERNEL_NAME",
+    "language": "python"
+}
