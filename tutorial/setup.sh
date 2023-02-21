@@ -33,6 +33,7 @@ setup_conda() {
     #Install library
     source activate $CONDA_RAY_ENV
     python3 -m pip install git+https://github.com/asnaylor/nersc_cluster_deploy.git
+    python3 -m ipykernel install --user --name $CONDA_RAY_ENV --display-name $CONDA_RAY_ENV
     source deactivate
 }
 
