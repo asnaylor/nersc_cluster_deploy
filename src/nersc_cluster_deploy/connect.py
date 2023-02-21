@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import socket
 
 import ray
@@ -37,6 +38,7 @@ def get_ray_cluster_address(sfp_api: SuperfacilityAPI, jobid: int, site: str = N
     if site != 'cori':
         head_node_ipaddress = socket.gethostbyname(head_nodename)
     else:
+        # Temp solution for cori
         raise NotImplementedError('Support for cori ray head node not implemented yet')
 
     return 'ray://{}:10001'.format(head_node_ipaddress)
@@ -54,18 +56,13 @@ def _parse_nodelist(nodelist: str) -> str:
         first_node: str,
             Name of first node
     """
-    _ = nodelist.split('[')
+    x = re.findall("\d+(?=[-,])", nodelist)
 
-    if len(_) > 1:
-        prefix = _[0]
-        nums = _[-1].strip(']')
-        if '-' in nums:
-            first = nums.split('-')[0]
-        elif ',' in nums:
-            first = nums.split(',')[0]
-        return f'{prefix}{first}'
+    if len(x) == 0:
+        return nodelist
     else:
-        return _[0]
+        return nodelist.split('[')[0] + x[0]
+
 
 
 def ray_cluster_summary() -> None:
