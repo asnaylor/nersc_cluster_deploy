@@ -68,8 +68,10 @@ setup_shifter_hvd_pytorch(){
             --env PYTHONUSERBASE=$CUSTOM_PYTHONUSERBASE \
             --env HOROVOD_NCCL_HOME=/opt/udiImage/modules/nccl-2.15 \
             --env HOROVOD_GPU_OPERATIONS=NCCL \
+            --env HOROVOD_NCCL_LINK=SHARED \
             --env HOROVOD_WITH_PYTORCH=1 \
             python3 -m pip install horovod[pytorch]
+
 }
 
 EX_NUM=$1

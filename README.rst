@@ -51,7 +51,7 @@ Installation
 
 You can install the in-development version with::
 
-    pip install https://github.com/asnaylor/nersc_cluster_deploy/archive/main.zip
+    pip install git+https://github.com/asnaylor/nersc_cluster_deploy.git
 
 
 Documentation
