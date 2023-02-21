@@ -31,9 +31,9 @@ setup_conda() {
     conda create -n $CONDA_RAY_ENV ipykernel python=3.10 -y
     
     #Install library
-    conda activate $CONDA_RAY_ENV
+    source activate $CONDA_RAY_ENV
     python3 -m pip install git+https://github.com/asnaylor/nersc_cluster_deploy.git
-    conda deactivate
+    source deactivate
 }
 
 setup_shifter_kernel(){
