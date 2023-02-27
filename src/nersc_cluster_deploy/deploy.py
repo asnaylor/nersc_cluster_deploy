@@ -11,6 +11,7 @@ from SuperfacilityAPI.nersc_systems import NERSC_DEFAULT_COMPUTE
 
 from .utility import slurm_long_options
 from .utility import supported_cluster_types
+from .utility import supported_nersc_machines
 
 
 def deploy_ray_cluster(
@@ -87,6 +88,9 @@ def _deploy_cluster(
     if cluster_type not in supported_cluster_types:
         raise TypeError(f'{cluster_type} not supported. Currently only {supported_cluster_types}')
 
+    if site not in supported_nersc_machines:
+        raise TypeError(f'{site} not supported. Currently only {supported_nersc_machines}')
+    
     # Process slurm options
     slurm_config = _convert_slurm_options(slurm_options, cluster_type, site, use_gpu)
 

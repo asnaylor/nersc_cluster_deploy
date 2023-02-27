@@ -89,7 +89,7 @@ To use the project:
 
     #Also supported is
     slurm_options = '-q debug -a <account> --time=00:20:00 -N 3'
-    site = 'cori'
+    site = 'perlmutter'
 
     job = deploy_ray_cluster(
         sfp_api,

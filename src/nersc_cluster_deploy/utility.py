@@ -2,6 +2,9 @@ import math
 
 supported_cluster_types = ['ray']  # dask coming soon
 
+supported_nersc_machines = ['perlmutter', 'muller']
+
+
 slurm_long_options = {
     'A': 'account',
     'a': 'array',

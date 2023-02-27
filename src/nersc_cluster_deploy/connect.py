@@ -8,7 +8,7 @@ from SuperfacilityAPI import SuperfacilityAPI  # noqa: F401
 from SuperfacilityAPI.nersc_systems import NERSC_DEFAULT_COMPUTE
 
 from .utility import convert_size
-
+from .utility import supported_nersc_machines
 
 def get_ray_cluster_address(sfp_api: SuperfacilityAPI, jobid: int, site: str = NERSC_DEFAULT_COMPUTE) -> str:
     """
@@ -26,6 +26,10 @@ def get_ray_cluster_address(sfp_api: SuperfacilityAPI, jobid: int, site: str = N
         ray_address: str,
             Return json from sf_api request.
     """
+    #Input handling    
+    if site not in supported_nersc_machines:
+        raise TypeError(f'{site} not supported. Currently only {supported_nersc_machines}')
+    
     # Get job information
     job_sqs = sfp_api.get_jobs(site=site, sacct=False, jobid=jobid)
     if job_sqs['output'][0]['state'] != 'RUNNING':
@@ -34,12 +38,7 @@ def get_ray_cluster_address(sfp_api: SuperfacilityAPI, jobid: int, site: str = N
     # Parse nodelist and convert to ip
     nodelist = job_sqs['output'][0]['nodelist']
     head_nodename = _parse_nodelist(nodelist)
-
-    if site != 'cori':
-        head_node_ipaddress = socket.gethostbyname(head_nodename)
-    else:
-        # Temp solution for cori
-        raise NotImplementedError('Support for cori ray head node not implemented yet')
+    head_node_ipaddress = socket.gethostbyname(head_nodename)
 
     return 'ray://{}:10001'.format(head_node_ipaddress)
 
