@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #=========================================
-# 
+#
 # Title: setup.sh
 # Author: Andrew Naylor
 # Date: Feb 23
@@ -10,11 +10,11 @@
 #=========================================
 
 ## Parse Args
-usage() {                                 
-  echo "Usage: $0 <Exercise Number>" 1>&2 
+usage() {
+  echo "Usage: $0 <Exercise Number>" 1>&2
 }
 
-exit_abnormal() { 
+exit_abnormal() {
   usage
   exit 1
 }
@@ -29,7 +29,7 @@ setup_conda() {
     module load python
     #Create conda env
     conda create -n $CONDA_RAY_ENV ipykernel python=3.10 -y
-    
+
     #Install library
     source activate $CONDA_RAY_ENV
     python3 -m pip install git+https://github.com/asnaylor/nersc_cluster_deploy.git

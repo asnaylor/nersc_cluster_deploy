@@ -10,6 +10,7 @@ from SuperfacilityAPI.nersc_systems import NERSC_DEFAULT_COMPUTE
 from .utility import convert_size
 from .utility import supported_nersc_machines
 
+
 def get_ray_cluster_address(sfp_api: SuperfacilityAPI, jobid: int, site: str = NERSC_DEFAULT_COMPUTE) -> str:
     """
     Get the ray cluster address of the slurm job.
@@ -26,10 +27,10 @@ def get_ray_cluster_address(sfp_api: SuperfacilityAPI, jobid: int, site: str = N
         ray_address: str,
             Return json from sf_api request.
     """
-    #Input handling    
+    # Input handling
     if site not in supported_nersc_machines:
         raise TypeError(f'{site} not supported. Currently only {supported_nersc_machines}')
-    
+
     # Get job information
     job_sqs = sfp_api.get_jobs(site=site, sacct=False, jobid=jobid)
     if job_sqs['output'][0]['state'] != 'RUNNING':
@@ -55,13 +56,12 @@ def _parse_nodelist(nodelist: str) -> str:
         first_node: str,
             Name of first node
     """
-    x = re.findall("\d+(?=[-,])", nodelist)
+    x = re.findall(r"\d+(?=[-,])", nodelist)
 
     if len(x) == 0:
         return nodelist
     else:
         return nodelist.split('[')[0] + x[0]
-
 
 
 def ray_cluster_summary() -> None:

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import pkgutil
 
 from jinja2 import Environment
@@ -19,6 +20,8 @@ def deploy_ray_cluster(
     slurm_options: dict | str,
     site: str = NERSC_DEFAULT_COMPUTE,
     use_gpu: bool = True,
+    metrics: bool = True,
+    gf_root_url: str = '',
     job_setup: list | str = None,
     post_job: list | str = None,
     srun_flags: str = '',
@@ -35,18 +38,22 @@ def deploy_ray_cluster(
             Name of the NERSC site, by default NERSC_DEFAULT_COMPUTE.
         use_gpu: bool, optional
             Use gpus in cluster, by default True.
+        metrics: bool, optional
+            Use metrics in cluster, by default True.
+        gf_root_url: str, optional
+            Root url path of Grafana instance.
         job_setup: list or str, optional
             bash commands to setup the job, by default None.
         post_job: list or str, optional
             bash commands after the job, by default None.
         srun_flags: str, optional
-                additional srun flags
+            additional srun flags
 
     Returns:
         output_json: dict,
             Return json from sf_api request.
     """
-    return _deploy_cluster(sfp_api, 'ray', slurm_options, site, use_gpu, job_setup, post_job, srun_flags)
+    return _deploy_cluster(sfp_api, 'ray', slurm_options, site, use_gpu, metrics, job_setup, post_job, srun_flags, gf_root_url)
 
 
 def _deploy_cluster(
@@ -55,9 +62,11 @@ def _deploy_cluster(
     slurm_options: dict | str,
     site: str,
     use_gpu: bool,
+    metrics: bool,
     job_setup: list | str,
     post_job: list | str,
     srun_flags: str = '',
+    gf_root_url: str = '',
 ) -> dict:
     """
     Create and submit cluster slurm job.
@@ -73,12 +82,16 @@ def _deploy_cluster(
             Name of the NERSC site.
         use_gpu: bool,
             Use gpus in cluster.
+        metrics: bool,
+            Use metrics in cluster.
         job_setup: list or str
             bash commands to setup the job.
         post_job: list or str
             bash commands after the job.
         srun_flags: str, optional
-                additional srun flags
+            additional srun flags
+        gf_root_url: str,
+            Root url path of Grafana instance.
 
     Returns:
         output_json: dict,
@@ -90,12 +103,21 @@ def _deploy_cluster(
 
     if site not in supported_nersc_machines:
         raise TypeError(f'{site} not supported. Currently only {supported_nersc_machines}')
-    
+
     # Process slurm options
     slurm_config = _convert_slurm_options(slurm_options, cluster_type, site, use_gpu)
 
+    # Prepare metrics url
+    if gf_root_url.endswith('/'):
+        gf_root_url = gf_root_url.rstrip('/')
+    if metrics and not gf_root_url:
+        if "NERSC_JUPYTER" in os.environ:
+            gf_root_url = f"https://jupyter.nersc.gov{os.getenv('JUPYTERHUB_SERVICE_PREFIX')}proxy/3000"
+        else:
+            gf_root_url = "http://localhost:3000"
+
     # Generate slurm script
-    slurm_script = _generate_slurm_script(slurm_config, cluster_type, job_setup, post_job, srun_flags)
+    slurm_script = _generate_slurm_script(slurm_config, cluster_type, job_setup, post_job, srun_flags, metrics, gf_root_url)
 
     # Submit Job
     return sfp_api.post_job(site, slurm_script, isPath=False)
@@ -145,7 +167,15 @@ def _convert_slurm_options(slurm_options: dict | str, cluster_type: str, site: s
     return {**default_slurm_options, **slurm_options}
 
 
-def _generate_slurm_script(slurm_options: dict, cluster_type: str, job_setup: list | str = None, post_job: list | str = None, srun_flags: str = '') -> str:
+def _generate_slurm_script(
+    slurm_options: dict,
+    cluster_type: str,
+    job_setup: list | str = None,
+    post_job: list | str = None,
+    srun_flags: str = '',
+    metrics: bool = True,
+    gf_root_url: str = '',
+) -> str:
     """
     Generate and write temporary slurm script.
 
@@ -159,7 +189,11 @@ def _generate_slurm_script(slurm_options: dict, cluster_type: str, job_setup: li
         post_job: list or str, optional
             bash commands after the job, by default None.
         srun_flags: str, optional
-                additional srun flags
+            additional srun flags
+        metrics: bool, optional
+            Use metrics in cluster.
+        gf_root_url: str, optional
+            Root url path of Grafana instance.
 
     Returns:
         slurm_script: str,
@@ -170,14 +204,22 @@ def _generate_slurm_script(slurm_options: dict, cluster_type: str, job_setup: li
     template = env.get_template(f'{cluster_type}.j2')
 
     # Give template user variables
-    slurm_script_template = slurm_script_template_class(slurm_options, job_setup, post_job, srun_flags)
+    slurm_script_template = slurm_script_template_class(slurm_options, job_setup, post_job, srun_flags, metrics, gf_root_url)
 
     # Render slurm script
     return template.render(job=slurm_script_template)
 
 
 class slurm_script_template_class:
-    def __init__(self, sbatch_options, job_setup: list | str = None, post_job: list | str = None, srun_flags: str = ''):
+    def __init__(
+        self,
+        sbatch_options,
+        job_setup: list | str = None,
+        post_job: list | str = None,
+        srun_flags: str = '',
+        metrics: bool = True,
+        gf_root_url: str = '',
+    ):
         """
         Slurm script template generate for jinja2.
 
@@ -190,6 +232,10 @@ class slurm_script_template_class:
                 bash commands after the job, by default None.
             srun_flags: str, optional
                 additional srun flags
+            metrics: bool, optional
+                Use metrics in cluster.
+            gf_root_url: str, optional
+                Root url path of Grafana instance.
 
         """
         self.sbatch_options = sbatch_options
@@ -197,6 +243,8 @@ class slurm_script_template_class:
         self.srun_flags = srun_flags
         self.job_setup = job_setup
         self.post_job = post_job
+        self.metrics = metrics
+        self.GF_root_url = gf_root_url
 
     def getSbatch(self):
         return '\n'.join([f'#SBATCH --{k}={v}' if v else f'#SBATCH --{k}' for k, v in self.sbatch_options.items()])

@@ -63,7 +63,7 @@ setup(
         # eg: 'keyword1', 'keyword2', 'keyword3',
     ],
     python_requires='>=3.7',
-    install_requires=['SuperfacilityConnector @ git+https://github.com/tylern4/SuperfacilityConnector.git@v0.3.1', 'jinja2', 'ray'],
+    install_requires=['SuperfacilityConnector @ git+https://github.com/tylern4/SuperfacilityConnector.git@v0.3.1', 'jinja2', 'ray>=2.3.0'],
     extras_require={
         # eg:
         #   'rst': ['docutils>=0.11'],
