@@ -3,7 +3,7 @@
         {
             "ntasks-per-node": "1",
             "constraint": "cpu",
-            "cpus-per-task": "256",
+            "cpus-per-task": "128",
             "nodes": "1"
         }
 }

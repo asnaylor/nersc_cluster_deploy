@@ -10,11 +10,10 @@ echo "[slurm] - Starting Ray HEAD"
 {% if job.metrics %}
 export RAY_GRAFANA_IFRAME_HOST={{ job.GF_root_url }}
 {% endif %}
-srun --nodes=1 --ntasks=1 --cpus-per-task=$((`nproc` - 2)) -w $head_node_hostname {{ job.srun_flags }} {{ job.shifter_flag }} ray start --head --node-ip-address=$head_node_hostname --port=$RAY_HEAD_PORT --block &
-sleep 10
+srun --nodes=1 --ntasks=1 --cpus-per-task=$((`nproc`/2 - 2)) --cpu-bind=cores -w $head_node_hostname {{ job.srun_flags }} {{ job.shifter_flag }} ray start --head --node-ip-address=$head_node_hostname --port=$RAY_HEAD_PORT --num-cpus=$((`nproc`/2 - 2)) --block &
+sleep 15
 
 {% if job.metrics %}
-echo "[slurm] - Starting up prometheus + grafana"
 PROMETHEUS_IMAGE="prom/prometheus:v2.42.0"
 GRAFANA_IMAGE="grafana/grafana-oss:9.4.3"
 
@@ -22,7 +21,8 @@ PROMETHEUS_DB_DIR=$SCRATCH/ray_cluster/prometheus
 GRAFANA_DIR=$SCRATCH/ray_cluster/grafana
 mkdir -p $PROMETHEUS_DB_DIR $GRAFANA_DIR
 
-srun --nodes=1 --ntasks=1 --cpus-per-task=1 --gpus-per-task=0 -w $head_node_hostname \
+echo "[slurm] - Starting up prometheus"
+srun --nodes=1 --ntasks=1 --cpus-per-task=1 --cpu-bind=cores --gpus-per-task=0 -w $head_node_hostname \
 shifter \
 --image=$PROMETHEUS_IMAGE \
 --volume=$PROMETHEUS_DB_DIR:/prometheus \
@@ -30,7 +30,8 @@ shifter \
 --config.file=/tmp/ray/session_latest/metrics/prometheus/prometheus.yml \
 --storage.tsdb.path=/prometheus &
 
-srun --nodes=1 --ntasks=1 --cpus-per-task=1 --gpus-per-task=0 -w $head_node_hostname \
+echo "[slurm] - Starting up grafana"
+srun --nodes=1 --ntasks=1 --cpus-per-task=1 --cpu-bind=cores --gpus-per-task=0 -w $head_node_hostname \
 shifter \
 --image=$GRAFANA_IMAGE \
 --volume=$GRAFANA_DIR:/grafana \
@@ -41,7 +42,7 @@ shifter \
 --env GF_PATHS_PROVISIONING=/tmp/ray/session_latest/metrics/grafana/provisioning \
 --entrypoint &
 {% endif %}
-sleep 10
+sleep 15
 
 worker_num=$(($SLURM_JOB_NUM_NODES - 1))
 if [[ $worker_num -ne 0 ]]; then
