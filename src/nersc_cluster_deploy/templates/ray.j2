@@ -51,7 +51,7 @@ if [[ $worker_num -ne 0 ]]; then
     do
     node_i=${nodes_array[$i]}
     echo "    - $i at $node_i"
-    srun --nodes=1 --ntasks=1 -w $node_i {{ job.srun_flags }} {{ job.shifter_flag }} ray start --address $RAY_NODE_ADDRESS --block &
+    srun --nodes=1 --ntasks=1 --cpu-bind=cores -w $node_i {{ job.srun_flags }} {{ job.shifter_flag }} ray start --address $RAY_NODE_ADDRESS --block &
     done
 fi
 
