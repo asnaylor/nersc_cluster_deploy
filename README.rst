@@ -63,7 +63,7 @@ To use the project:
 .. code-block:: python
 
     from SuperfacilityAPI import SuperfacilityAPI, SuperfacilityAccessToken
-    from nersc_cluster_deploy import deploy_ray_cluster, get_ray_cluster_address
+    from nersc_cluster_deploy import deploy_ray_cluster, get_ray_cluster_address, connect_ray_dashboard, get_ray_dashboard_url
     import ray
 
     api_key = SuperfacilityAccessToken(
@@ -99,6 +99,12 @@ To use the project:
         job_setup = ['module load python', 'conda activate ray_test_env']
         post_job = 'echo Completed job at: $(date)'
     )
+
+    #Get the ray and grafana dashboard url paths
+    print(connect_ray_dashboard(sfapi, job['jobid']))
+
+    #Or if within slurm job
+    print(get_ray_dashboard_url())
 
     #Get ray cluster address to connect
     cluster_address = get_ray_cluster_address(
