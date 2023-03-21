@@ -24,17 +24,22 @@ if [ $# -lt 1 ]; then
     exit_abnormal
 fi
 
-setup_conda() {
-    CONDA_RAY_ENV=nersc_cluster_deploy
-    module load python
-    #Create conda env
-    conda create -n $CONDA_RAY_ENV ipykernel python=3.10 -y
+setup_env() {
+  ML_MODULE=$1
+  module load $ML_MODULE
+  echo "<> Setting up $ML_MODULE env"
 
-    #Install library
-    source activate $CONDA_RAY_ENV
-    python3 -m pip install git+https://github.com/asnaylor/nersc_cluster_deploy.git
-    python3 -m ipykernel install --user --name $CONDA_RAY_ENV --display-name $CONDA_RAY_ENV
-    source deactivate
+  if python -m pip freeze | grep -q nersc-cluster-deploy
+    then  
+      echo "<!> nersc_cluster_deploy is already setup..."
+      return
+  fi
+
+  echo "<> Install nersc_cluster_deploy"
+  python -m pip install git+https://github.com/asnaylor/nersc_cluster_deploy.git
+
+  echo "<> Install Ray"
+  python -m pip install ray[air]==2.3.0
 }
 
 setup_shifter_kernel(){
@@ -58,21 +63,21 @@ setup_shifter_kernel(){
             python3 -m pip install git+https://github.com/asnaylor/nersc_cluster_deploy.git --user
 }
 
-setup_shifter_hvd_pytorch(){
-    IMAGE_NAME=$1
-    JUPYTER_KERNEL=$(echo $IMAGE_NAME | sed -r 's#[/:]+#_#g')
-    JUPYTER_KERNEL_FOLDER=$HOME/.local/share/jupyter/kernels/$JUPYTER_KERNEL/
-    CUSTOM_PYTHONUSERBASE=$HOME/.local/perlmutter/$JUPYTER_KERNEL
+# setup_shifter_hvd_pytorch(){
+#     IMAGE_NAME=$1
+#     JUPYTER_KERNEL=$(echo $IMAGE_NAME | sed -r 's#[/:]+#_#g')
+#     JUPYTER_KERNEL_FOLDER=$HOME/.local/share/jupyter/kernels/$JUPYTER_KERNEL/
+#     CUSTOM_PYTHONUSERBASE=$HOME/.local/perlmutter/$JUPYTER_KERNEL
 
-    shifter --image=$IMAGE_NAME --module=gpu,nccl-2.15 \
-            --env PYTHONUSERBASE=$CUSTOM_PYTHONUSERBASE \
-            --env HOROVOD_NCCL_HOME=/opt/udiImage/modules/nccl-2.15 \
-            --env HOROVOD_GPU_OPERATIONS=NCCL \
-            --env HOROVOD_NCCL_LINK=SHARED \
-            --env HOROVOD_WITH_PYTORCH=1 \
-            python3 -m pip install horovod[pytorch]
+#     shifter --image=$IMAGE_NAME --module=gpu,nccl-2.15 \
+#             --env PYTHONUSERBASE=$CUSTOM_PYTHONUSERBASE \
+#             --env HOROVOD_NCCL_HOME=/opt/udiImage/modules/nccl-2.15 \
+#             --env HOROVOD_GPU_OPERATIONS=NCCL \
+#             --env HOROVOD_NCCL_LINK=SHARED \
+#             --env HOROVOD_WITH_PYTORCH=1 \
+#             python3 -m pip install horovod[pytorch]
 
-}
+# }
 
 EX_NUM=$1
 
@@ -80,14 +85,19 @@ case $EX_NUM in
 
   1)
     echo "<> Setting up Ex1: Calculating Pi with Ray"
-    setup_conda
+    setup_env pytorch/1.13.1
+    ;;
+  
+  2)
+    echo "<> Setting up Ex1: Tuning Hyperparameters of a Distributed PyTorch Model with PBT using Ray Train & Tune"
+    setup_env pytorch/1.13.1
     ;;
 
-  2)
-    echo "<> Setting up Ex2: PyTorch MNIST Example: Ray + Horovod"
-    setup_shifter_kernel nersc/pytorch:ngc-22.09-v0 /opt/conda/bin/python
-    setup_shifter_hvd_pytorch nersc/pytorch:ngc-22.09-v0
-    ;;
+  # 3) #current issue with hvd build `horovod.common.exceptions.HorovodInternalError: ncclAllReduce failed: unhandled cuda error`
+  #   echo "<> Setting up Ex3: PyTorch MNIST Example: Ray + Horovod"
+  #   setup_env pytorch/1.13.1
+  #   setup_hvd_pytorch
+  #   ;;
 
   *)
     echo "Not a valid exercise number..."
