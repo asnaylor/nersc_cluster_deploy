@@ -30,7 +30,7 @@ setup_env() {
   echo "<> Setting up $ML_MODULE env"
 
   if python -m pip freeze | grep -q nersc-cluster-deploy
-    then  
+    then
       echo "<!> nersc_cluster_deploy is already setup..."
       return
   fi
@@ -87,7 +87,7 @@ case $EX_NUM in
     echo "<> Setting up Ex1: Calculating Pi with Ray"
     setup_env pytorch/1.13.1
     ;;
-  
+
   2)
     echo "<> Setting up Ex1: Tuning Hyperparameters of a Distributed PyTorch Model with PBT using Ray Train & Tune"
     setup_env pytorch/1.13.1

@@ -1,9 +1,0 @@
-{
-    "slurm_options":
-        {
-            "ntasks-per-node": "1",
-            "constraint": "cpu",
-            "cpus-per-task": "256",
-            "nodes": "1"
-        }
-}

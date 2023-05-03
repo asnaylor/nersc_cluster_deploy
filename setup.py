@@ -19,7 +19,7 @@ def read(*names, **kwargs):
 
 setup(
     name='nersc-cluster-deploy',
-    version='0.1.0',
+    version='0.2.0',
     license='LGPL-3.0-only',
     description='Deploy workflow clusters on NERSC supercomputers.',
     long_description='{}\n{}'.format(
@@ -63,7 +63,7 @@ setup(
         # eg: 'keyword1', 'keyword2', 'keyword3',
     ],
     python_requires='>=3.7',
-    install_requires=['SuperfacilityConnector @ git+https://github.com/tylern4/SuperfacilityConnector.git@v0.3.1', 'jinja2', 'ray>=2.3.0'],
+    install_requires=['jinja2', 'ray>=2.3.0'],
     extras_require={
         # eg:
         #   'rst': ['docutils>=0.11'],
