@@ -50,7 +50,7 @@ class serviceRayHead(service):
 
     def _generate_command(self):
         commands = []
-        commands += [self._preamble]
+        commands += [self._preamble.rstrip().rstrip(';')]
         commands += [self._srun + ' ' + self._rayhead] if self._srun else [self._rayhead]
         return '/bin/bash -c "' + ';'.join(commands) + '"'
 
@@ -118,7 +118,7 @@ class serviceManager:
         self.gf_root_url = gf_root_url
         self._srun_flags = srun_flags
         self._metrics = metrics
-        self._job_setup = job_setup + f'; export RAY_GRAFANA_IFRAME_HOST={self.gf_root_url}' if self._metrics else job_setup
+        self._job_setup = f'export RAY_GRAFANA_IFRAME_HOST={self.gf_root_url}; '+ job_setup if self._metrics else job_setup
         self._ray_port = ray_port
         self.start()
 
@@ -157,7 +157,7 @@ class serviceManager:
 
     @property
     def grafana_dashboard_url(self):
-        return f'{self.self.gf_root_url}/d/rayDefaultDashboard'
+        return f'{self.gf_root_url}/d/rayDefaultDashboard'
 
     def shutdown(self):
         self.logger.info('Shutdown cluster')

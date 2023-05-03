@@ -15,7 +15,7 @@ def deploy_ray_cluster(
     slurm_options: dict | str = '',
     metrics: bool = True,
     gf_root_url: str = '',
-    job_setup: list | str = None,
+    job_setup: list | str = '',
     srun_flags: str = '',
 ) -> serviceManager:
     """
