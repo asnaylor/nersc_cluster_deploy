@@ -12,7 +12,7 @@ def cluster_summary() -> None:
     node_resources = ray.cluster_resources()
 
     print("Nodes: {:0.0f}".format(len([i for i in node_resources if 'node' in i])))
-    print("CPU:   {:0.0f}".format(node_resources['CPU']))
+    print("CPU:   {:0.0f}".format(node_resources.get('CPU', 0)))
     print("GPU:   {:0.0f}".format(node_resources.get('GPU', 0)))
-    print("RAM:   {}".format(convert_size(node_resources['memory'])))
+    print("RAM:   {}".format(convert_size(node_resources.get('memory', 0))))
     return
