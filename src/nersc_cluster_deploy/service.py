@@ -153,7 +153,7 @@ class serviceManager:
 
     @property
     def ray_dashboard_url(self):
-        return f'https://jupyter.nersc.gov{os.getenv("JUPYTERHUB_SERVICE_PREFIX")}proxy/localhost:8265/#/new/overview'
+        return f'https://jupyter.nersc.gov{os.getenv("JUPYTERHUB_SERVICE_PREFIX")}proxy/localhost:8265/'
 
     @property
     def grafana_dashboard_url(self):

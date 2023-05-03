@@ -63,7 +63,7 @@ setup(
         # eg: 'keyword1', 'keyword2', 'keyword3',
     ],
     python_requires='>=3.7',
-    install_requires=['jinja2', 'ray>=2.3.0'],
+    install_requires=['jinja2', 'ray[air]>=2.3.0'],
     extras_require={
         # eg:
         #   'rst': ['docutils>=0.11'],
