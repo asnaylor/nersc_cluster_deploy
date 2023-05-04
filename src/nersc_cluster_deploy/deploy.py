@@ -55,15 +55,17 @@ def deploy_ray_cluster(
         return rayHeadService
 
     # Creater Ray workers
-    with tempfile.NamedTemporaryFile('w+') as fp:
+    with tempfile.NamedTemporaryFile('w+', delete=False) as fp:
         # Generate script to create workers
         fp.write(
             _generate_slurm_script(slurm_options, 'ray', rayHeadService.ray.cluster_address, job_setup=job_setup, srun_flags=srun_flags)
         )
 
         if os.getenv('SLURM_JOBID'):
+            print("Creating Ray workers via srun")
             rayHeadService.workers = Popen(split(f'/bin/bash {fp.name}'))
         else:
+            print("Creating Ray workers via sbatch")
             Popen(split(f'sbatch {fp.name}'))  # TODO: Return jobid (--parsable)
 
     return rayHeadService

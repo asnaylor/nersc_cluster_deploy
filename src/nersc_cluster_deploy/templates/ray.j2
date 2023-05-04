@@ -24,7 +24,7 @@ for ((  i=0; i<$worker_num; i++ ))
 do
     node_i=${nodes_array[$i]}
     echo "    - $i at $node_i"
-    srun --nodes=1 --ntasks-per-node=1 -w $node_i --cpus-per-task=128 --gpus-per-task=4 {{ job.srun_flags }} ray start --address {{ job.ray_head_address }} --num-cpus=128 --num-gpus=4 --block &
+    srun --nodes=1 --ntasks=1 -w $node_i --cpus-per-task=128 --gpus-per-task=4 {{ job.srun_flags }} ray start --address {{ job.ray_head_address }} --num-cpus=128 --num-gpus=4 --block &
 done
 
 sleep infinity
