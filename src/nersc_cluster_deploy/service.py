@@ -6,8 +6,7 @@ import socket
 import time
 from pathlib import Path
 from shlex import split
-
-# from subprocess import DEVNULL
+from subprocess import DEVNULL  # noqa: F401
 from subprocess import Popen
 
 from nersc_cluster_deploy._util import get_host_ip_address
@@ -118,7 +117,7 @@ class serviceManager:
         self.gf_root_url = gf_root_url
         self._srun_flags = srun_flags
         self._metrics = metrics
-        self._job_setup = f'export RAY_GRAFANA_IFRAME_HOST={self.gf_root_url}; '+ job_setup if self._metrics else job_setup
+        self._job_setup = f'export RAY_GRAFANA_IFRAME_HOST={self.gf_root_url}; ' + job_setup if self._metrics else job_setup
         self._ray_port = ray_port
         self.start()
 
@@ -163,4 +162,6 @@ class serviceManager:
         self.logger.info('Shutdown cluster')
         self.grafana.kill()
         self.prometheus.kill()
+        if os.getenv('SLURM_JOBID'):
+            self.workers.kill()  # TODO: better way to manage workers
         self.ray.kill()  # TODO: investigate how to properly kill Ray head

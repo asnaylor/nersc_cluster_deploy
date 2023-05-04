@@ -3,12 +3,16 @@ from __future__ import annotations
 import json
 import os
 import pkgutil
+import socket
+import tempfile
+from shlex import split
+from subprocess import Popen
+
+from jinja2 import Environment
+from jinja2 import PackageLoader
 
 from nersc_cluster_deploy._util import slurm_long_options
 from nersc_cluster_deploy.service import serviceManager
-
-# from jinja2 import Environment
-# from jinja2 import PackageLoader
 
 
 def deploy_ray_cluster(
@@ -46,18 +50,64 @@ def deploy_ray_cluster(
     # Start RayHead
     rayHeadService = serviceManager(gf_root_url=gf_root_url, srun_flags=srun_flags, job_setup=job_setup, metrics=metrics)
 
-    # TODO: Test submitting with sbatch
-    # if slurm_options:
-    #     #submit to sbatch
+    # If only on 1 compute node no need to create workers
+    if int(os.getenv('SLURM_NNODES', 0)) == 1:
+        return rayHeadService
 
-    #     # Process slurm options
-    #     slurm_config = _convert_slurm_options(slurm_options, 'ray')
+    # Creater Ray workers
+    with tempfile.NamedTemporaryFile('w+') as fp:
+        # Generate script to create workers
+        fp.write(
+            _generate_slurm_script(slurm_options, 'ray', rayHeadService.ray.cluster_address, job_setup=job_setup, srun_flags=srun_flags)
+        )
 
-    #     # Generate slurm script
-    #     slurm_script = _generate_slurm_script(slurm_config, cluster_type, job_setup, post_job, srun_flags, metrics, gf_root_url)
+        if os.getenv('SLURM_JOBID'):
+            rayHeadService.workers = Popen(split(f'/bin/bash {fp.name}'))
+        else:
+            Popen(split(f'sbatch {fp.name}'))  # TODO: Return jobid (--parsable)
 
-    # Submit Job
     return rayHeadService
+
+
+def _generate_slurm_script(
+    slurm_options: dict | str,
+    cluster_type: str,
+    ray_head_address: str,
+    job_setup: list | str = None,
+    srun_flags: str = '',
+) -> str:
+    """
+    Generate and write temporary slurm script.
+
+    Args:
+        slurm_options: dict,
+            slurm configuration dictionary.
+        cluster_type: str,
+            type of cluster to deploy.
+        ray_head_address: str
+            ip address + port of ray head.
+        job_setup: list or str, optional
+            bash commands to setup the job, by default None.
+        srun_flags: str, optional
+            additional srun flags.
+
+
+    Returns:
+        slurm_script: str,
+            Slurm script.
+    """
+    # Check if in job
+    slurm_options = None if os.getenv('SLURM_JOBID') else _convert_slurm_options(slurm_options, 'ray')
+
+    # Load in jinja cluster template
+    env = Environment(loader=PackageLoader('nersc_cluster_deploy'))
+    template = env.get_template(f'{cluster_type}.j2')
+
+    # Give template user variables
+    slurm_script_template = slurm_script_template_class(slurm_options, ray_head_address, job_setup, srun_flags)
+
+    # Render slurm script
+    return template.render(job=slurm_script_template)
 
 
 def _convert_slurm_options(slurm_options: dict | str, cluster_type: str) -> dict:
@@ -99,95 +149,41 @@ def _convert_slurm_options(slurm_options: dict | str, cluster_type: str) -> dict
     return {**default_slurm_options, **slurm_options}
 
 
-# def _generate_slurm_script(
-#     slurm_options: dict,
-#     cluster_type: str,
-#     job_setup: list | str = None,
-#     post_job: list | str = None,
-#     srun_flags: str = '',
-#     metrics: bool = True,
-#     gf_root_url: str = '',
-# ) -> str:
-#     """
-#     Generate and write temporary slurm script.
+class slurm_script_template_class:
+    def __init__(
+        self,
+        sbatch_options,
+        ray_head_address,
+        job_setup: list | str = None,
+        srun_flags: str = '',
+    ):
+        """
+        Slurm script template generate for jinja2.
 
-#     Args:
-#         slurm_options: dict,
-#             slurm configuration dictionary.
-#         cluster_type: str,
-#             type of cluster to deploy.
-#         job_setup: list or str, optional
-#             bash commands to setup the job, by default None.
-#         post_job: list or str, optional
-#             bash commands after the job, by default None.
-#         srun_flags: str, optional
-#             additional srun flags
-#         metrics: bool, optional
-#             Use metrics in cluster.
-#         gf_root_url: str, optional
-#             Root url path of Grafana instance.
+        Args:
+            slurm_options: dict
+                slurm configuration dictionary.
+            ray_head_address: str
+                ip address + port of ray head.
+            job_setup: list or str, optional
+                bash commands to setup the job, by default None.
+            srun_flags: str, optional
+                additional srun flags
 
-#     Returns:
-#         slurm_script: str,
-#             Slurm script.
-#     """
-#     # Load in jinja cluster template
-#     env = Environment(loader=PackageLoader('nersc_cluster_deploy'))
-#     template = env.get_template(f'{cluster_type}.j2')
+        """
+        self.sbatch_options = sbatch_options
+        self.ray_head_address = ray_head_address
+        self.srun_flags = srun_flags
+        self.job_setup = job_setup
+        self.ray_headnode = socket.gethostname()
 
-#     # Give template user variables
-#     slurm_script_template = slurm_script_template_class(slurm_options, job_setup, post_job, srun_flags, metrics, gf_root_url)
+    def getSbatch(self):
+        return '\n'.join([f'#SBATCH --{k}={v}' if v else f'#SBATCH --{k}' for k, v in self.sbatch_options.items()])
 
-#     # Render slurm script
-#     return template.render(job=slurm_script_template)
+    def _process_commands(self, commands):
+        if isinstance(commands, list):
+            return '\n'.join(commands)
+        return commands
 
-
-# class slurm_script_template_class:
-#     def __init__(
-#         self,
-#         sbatch_options,
-#         job_setup: list | str = None,
-#         post_job: list | str = None,
-#         srun_flags: str = '',
-#         metrics: bool = True,
-#         gf_root_url: str = '',
-#     ):
-#         """
-#         Slurm script template generate for jinja2.
-
-#         Args:
-#             slurm_options: dict
-#                 slurm configuration dictionary.
-#             job_setup: list or str, optional
-#                 bash commands to setup the job, by default None.
-#             post_job: list or str, optional
-#                 bash commands after the job, by default None.
-#             srun_flags: str, optional
-#                 additional srun flags
-#             metrics: bool, optional
-#                 Use metrics in cluster.
-#             gf_root_url: str, optional
-#                 Root url path of Grafana instance.
-
-#         """
-#         self.sbatch_options = sbatch_options
-#         self.shifter_flag = 'shifter' if 'image' in sbatch_options else ''
-#         self.srun_flags = srun_flags
-#         self.job_setup = job_setup
-#         self.post_job = post_job
-#         self.metrics = metrics
-#         self.GF_root_url = gf_root_url
-
-#     def getSbatch(self):
-#         return '\n'.join([f'#SBATCH --{k}={v}' if v else f'#SBATCH --{k}' for k, v in self.sbatch_options.items()])
-
-#     def _process_commands(self, commands):
-#         if isinstance(commands, list):
-#             return '\n'.join(commands)
-#         return commands
-
-#     def getJob_setup(self):
-#         return self._process_commands(self.job_setup)
-
-#     def getPost_job(self):
-#         return self._process_commands(self.post_job)
+    def getJob_setup(self):
+        return self._process_commands(self.job_setup)
