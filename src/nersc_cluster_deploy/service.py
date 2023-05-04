@@ -162,6 +162,6 @@ class serviceManager:
         self.logger.info('Shutdown cluster')
         self.grafana.kill()
         self.prometheus.kill()
-        if os.getenv('SLURM_JOBID'):
+        if os.getenv('SLURM_JOBID') and int(os.getenv('SLURM_NNODES', 0)):
             self.workers.kill()  # TODO: better way to manage workers
         self.ray.kill()  # TODO: investigate how to properly kill Ray head
