@@ -14,6 +14,10 @@ from jinja2 import PackageLoader
 from nersc_cluster_deploy._util import slurm_long_options
 from nersc_cluster_deploy.service import serviceManager
 
+def _process_commands(commands):
+    if isinstance(commands, list):
+        return ';'.join(commands)
+    return commands
 
 def deploy_ray_cluster(
     slurm_options: dict | str = '',
@@ -47,6 +51,9 @@ def deploy_ray_cluster(
     if metrics and not gf_root_url:
         gf_root_url = f"https://jupyter.nersc.gov{os.getenv('JUPYTERHUB_SERVICE_PREFIX')}proxy/3000"
 
+    #Prepare job_setup
+    job_setup = _process_commands(job_setup)
+
     # Start RayHead
     rayHeadService = serviceManager(gf_root_url=gf_root_url, srun_flags=srun_flags, job_setup=job_setup, metrics=metrics)
 
@@ -75,7 +82,7 @@ def _generate_slurm_script(
     slurm_options: dict | str,
     cluster_type: str,
     ray_head_address: str,
-    job_setup: list | str = None,
+    job_setup: str = '',
     srun_flags: str = '',
 ) -> str:
     """
@@ -156,7 +163,7 @@ class slurm_script_template_class:
         self,
         sbatch_options,
         ray_head_address,
-        job_setup: list | str = None,
+        job_setup: str = '',
         srun_flags: str = '',
     ):
         """
@@ -167,7 +174,7 @@ class slurm_script_template_class:
                 slurm configuration dictionary.
             ray_head_address: str
                 ip address + port of ray head.
-            job_setup: list or str, optional
+            job_setup: str, optional
                 bash commands to setup the job, by default None.
             srun_flags: str, optional
                 additional srun flags
@@ -182,10 +189,5 @@ class slurm_script_template_class:
     def getSbatch(self):
         return '\n'.join([f'#SBATCH --{k}={v}' if v else f'#SBATCH --{k}' for k, v in self.sbatch_options.items()])
 
-    def _process_commands(self, commands):
-        if isinstance(commands, list):
-            return '\n'.join(commands)
-        return commands
-
     def getJob_setup(self):
-        return self._process_commands(self.job_setup)
+        return self.job_setup
