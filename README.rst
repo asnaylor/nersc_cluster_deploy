@@ -107,7 +107,7 @@ To use the project:
 Tutorials
 =============
 
-For more information and examples see the `tutorial https://github.com/asnaylor/nersc_ray_notebook`_ repo.
+For more information and examples see the `tutorial <https://github.com/asnaylor/nersc_ray_notebook>`_ repo.
 
 Development
 ===========
