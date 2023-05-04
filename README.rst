@@ -62,63 +62,52 @@ To use the project:
 
 .. code-block:: python
 
-    from SuperfacilityAPI import SuperfacilityAPI, SuperfacilityAccessToken
-    from nersc_cluster_deploy import deploy_ray_cluster, get_ray_cluster_address, connect_ray_dashboard, get_ray_dashboard_url
-    import ray
-
-    api_key = SuperfacilityAccessToken(
-        client_id = client_id,
-        private_key = private_key
-    )
-    sfapi = SuperfacilityAPI(api_key)
-
+    from nersc_cluster_deploy import deploy_ray_cluster
+    
+    #
+    #Start Ray Cluster (via Shared Jupyter Node)
+    ####################
     slurm_options = {
         'qos': 'debug',
         'account':'<account>',
-        'image': 'nersc/pytorch:ngc-22.09-v0',
         'nodes': '2',
         't': '00:30:00'
-    }
-    site = 'perlmutter'
+    } #Also supported
+    # slurm_options = '-q debug -a <account> --time=00:30:00 -N 2'
 
-    job = deploy_ray_cluster(
-        sfp_api,
-        slurm_options,
-        site
+    module_load = 'tensorflow/2.9.0'
+    rayCluster = deploy_ray_cluster(
+        slurm_options = slurm_options,
+        job_setup = f'module load {module_load}'
+    )
+    #Also supported
+    # job_setup =['module load python', 'conda activate custom_env']
+    
+
+    #
+    #Start Ray Cluster (via in slurm job)
+    ####################
+    rayCluster = deploy_ray_cluster(
+        job_setup = ['module load pytorch/1.13.1'] 
     )
 
-    #Also supported is
-    slurm_options = '-q debug -a <account> --time=00:20:00 -N 3'
-    site = 'perlmutter'
 
-    job = deploy_ray_cluster(
-        sfp_api,
-        slurm_options,
-        site,
-        use_gpu = False,
-        job_setup = ['module load python', 'conda activate ray_test_env']
-        post_job = 'echo Completed job at: $(date)'
-    )
+    #
+    #Get ray cluster dashboard
+    ####################
+    print(rayCluster.ray_dashboard_url)
+    
 
-    #Get the ray and grafana dashboard url paths
-    print(connect_ray_dashboard(sfapi, job['jobid']))
-
-    #Or if within slurm job
-    print(get_ray_dashboard_url())
-
-    #Get ray cluster address to connect
-    cluster_address = get_ray_cluster_address(
-        sfp_api,
-        job['jobid'],
-        site
-    )
-    ray.init(cluster_address)
+    #
+    #Connect to ray cluster
+    ####################
+    ray.init(address='auto')
 
 
 Tutorials
 =============
 
-For more information and examples see the `tutorial <tutorial/README.md>`_ folder.
+For more information and examples see the `tutorial https://github.com/asnaylor/nersc_ray_notebook`_ repo.
 
 Development
 ===========
