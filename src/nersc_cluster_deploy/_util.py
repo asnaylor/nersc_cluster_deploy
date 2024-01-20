@@ -34,6 +34,9 @@ slurm_long_options = {
     't': 'time',
 }
 
+grafana_port_default = '3000'
+ray_dashboard_port_default = '8265'
+
 
 def convert_size(size_bytes: int | float) -> str:
     """Convert bytes to human readable."""

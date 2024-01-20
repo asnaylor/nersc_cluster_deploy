@@ -1,18 +1,21 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 import pkgutil
 import socket
 import tempfile
 from shlex import split
-from subprocess import Popen
+from subprocess import Popen, PIPE
 
 from jinja2 import Environment
 from jinja2 import PackageLoader
 
 from nersc_cluster_deploy._util import slurm_long_options
-from nersc_cluster_deploy.service import serviceManager
+from nersc_cluster_deploy.service import service, serviceManager
+
+logger = logging.getLogger('nersc_cluster_deploy')
 
 def _process_commands(commands):
     if isinstance(commands, list):
@@ -51,31 +54,49 @@ def deploy_ray_cluster(
     if metrics and not gf_root_url:
         gf_root_url = f"https://jupyter.nersc.gov{os.getenv('JUPYTERHUB_SERVICE_PREFIX')}proxy/3000"
 
-    #Prepare job_setup
+    # Prepare job_setup
     job_setup = _process_commands(job_setup)
 
     # Start RayHead
-    rayHeadService = serviceManager(gf_root_url=gf_root_url, srun_flags=srun_flags, job_setup=job_setup, metrics=metrics)
+    rayServiceManager = serviceManager(gf_root_url=gf_root_url, srun_flags=srun_flags, job_setup=job_setup, metrics=metrics)
 
     # If only on 1 compute node no need to create workers
     if int(os.getenv('SLURM_NNODES', 0)) == 1:
-        return rayHeadService
+        print(f"Ray cluster running at {rayServiceManager.ray.cluster_address}")
+        print(f"Dashboard avaliable at {rayServiceManager.ray_dashboard_url} {'with metrics' if metrics else ''}")
+        return rayServiceManager
 
     # Creater Ray workers
     with tempfile.NamedTemporaryFile('w+', delete=False) as fp:
         # Generate script to create workers
         fp.write(
-            _generate_slurm_script(slurm_options, 'ray', rayHeadService.ray.cluster_address, job_setup=job_setup, srun_flags=srun_flags)
+            _generate_slurm_script(slurm_options, 'ray', rayServiceManager.ray.cluster_address, job_setup=job_setup, srun_flags=srun_flags)
         )
+        logger.debug(f'<{__name__}>: Job script {fp.name}')
+        fp.seek(0)
+        logger.debug(f'<{__name__}>: {fp.read()}')
 
         if os.getenv('SLURM_JOBID'):
-            print("Creating Ray workers via srun")
-            rayHeadService.workers = Popen(split(f'/bin/bash {fp.name}'))
+            logger.info(f'<{__name__}>: Creating Ray workers via srun')
+            rayServiceManager.workers = service('RayWorkers', command=f'/bin/bash {fp.name}')
+            rayServiceManager.workers.start()
         else:
-            print("Creating Ray workers via sbatch")
-            Popen(split(f'sbatch {fp.name}'))  # TODO: Return jobid (--parsable)
+            logger.info(f'<{__name__}>: Creating Ray workers via sbatch')
+            sbatch_process = Popen(split(f'sbatch --parsable {fp.name}'), stdout=PIPE, stderr=PIPE)
+            p_stdout, p_stderr = tuple(map(lambda x: x.decode("utf-8"),  sbatch_process.communicate()))
+            
+            if p_stderr:
+                logger.critical(f'<{__name__}>: Unable to run sbatch {p_stderr}')
+                raise RuntimeError("Unable to submit sbatch")
 
-    return rayHeadService
+            rayServiceManager.jobid = p_stdout.strip('\n')
+            logger.info(f'<{__name__}>: jobid {p_stdout}')
+
+    # Print useful information to screen
+    print(f"Ray cluster running at {rayServiceManager.ray.cluster_address} {f'(jobid {rayServiceManager.jobid})' if rayServiceManager.jobid else ''}")
+    print(f"Dashboard avaliable at {rayServiceManager.ray_dashboard_url} {'with metrics' if metrics else ''}")
+
+    return rayServiceManager
 
 
 def _generate_slurm_script(
@@ -144,7 +165,6 @@ def _convert_slurm_options(slurm_options: dict | str, cluster_type: str) -> dict
                 v, k = flag.strip('--').split('=')
                 slurm_options[v] = k
             else:
-                print(flag)
                 option = slurm_options_copy.pop(0)
                 slurm_options[flag.strip('-')] = option
 

@@ -11,30 +11,29 @@ from subprocess import Popen
 
 from nersc_cluster_deploy._util import get_host_ip_address
 
-# Format the log message
-logging.basicConfig(format='%(asctime)s %(levelname)s <%(name)s> %(message)s')
-
+logger = logging.getLogger('nersc_cluster_deploy')
 
 # Base service class
 class service:
     def __init__(self, name, command):
         self.name = name
         self._command = command
-        self.logger = self._create_logger()
-        self.logger.setLevel(logging.DEBUG)  # TODO: config logging correctly
-
-    def _create_logger(self):
-        return logging.getLogger(self.name)
+        self.logfile = open(f'{name}_service.log', "w")
 
     def start(self):
-        self.logger.info('Starting service')
-        self.logger.debug(f'Running cmd: {self._command}')
-        self.process = Popen(split(self._command))  # , stdout=DEVNULL, stderr=DEVNULL
-        # TODO: returncode and print out stderr if problem
+        logger.info(f'<{self.name}>: Starting service')
+        logger.debug(f'<{self.name}>: Running cmd: {self._command}')
+        self.process = Popen(split(self._command), stdout=self.logfile, stderr=self.logfile)
+
+        returncode = self.process.returncode
+        if returncode:
+            logger.debug(f'<{self.name}>: returncode {returncode}')
+            raise RuntimeError(f'{self.name} returned {returncode}')
 
     def kill(self):
-        self.logger.info('Stopping service')
+        logger.info(f'<{self.name}>: Stopping service')
         self.process.kill()
+        self.logfile.close()
 
 
 # Ray Head Service
@@ -45,6 +44,7 @@ class serviceRayHead(service):
         self._port = port
         self._rayhead = f'ray start --head --block --port {self._port} {head_resources}'
         self.cluster_address = f'{get_host_ip_address()}:{self._port}'
+        self.workers = None
         super(serviceRayHead, self).__init__('RayHead', command=self._generate_command())
 
     def _generate_command(self):
@@ -111,21 +111,19 @@ class serviceGrafana(service):
 # Service Manager
 class serviceManager:
     def __init__(self, gf_root_url='', srun_flags='', job_setup='', metrics=True, ray_port='6379'):
-        self.logger = self._create_logger()
-        self.logger.setLevel(logging.DEBUG)
+        self.name = 'Service-Manager'
         self._delay = 10
         self.gf_root_url = gf_root_url
         self._srun_flags = srun_flags
         self._metrics = metrics
         self._job_setup = f'export RAY_GRAFANA_IFRAME_HOST={self.gf_root_url}; ' + job_setup if self._metrics else job_setup
         self._ray_port = ray_port
+        self.jobid = None
+        self.workers = None
         self.start()
 
-    def _create_logger(self):
-        return logging.getLogger('Service-Manager')
-
     def start(self):
-        self.logger.info('Starting up cluster')
+        logger.info(f'<{self.name}>: Starting up cluster')
 
         # Check if code executed is in slurm job
         head_resources = '--num-cpus=0 --num-gpus=0'
@@ -148,7 +146,7 @@ class serviceManager:
             self.grafana = serviceGrafana(gf_root_url=self.gf_root_url)
             self.grafana.start()
 
-        self.logger.info("Cluster startup complete")
+        logger.info(f'<{self.name}>: Cluster startup complete')
 
     @property
     def ray_dashboard_url(self):
@@ -159,9 +157,12 @@ class serviceManager:
         return f'{self.gf_root_url}/d/rayDefaultDashboard'
 
     def shutdown(self):
-        self.logger.info('Shutdown cluster')
+        logger.info(f'<{self.name}>: Shutting down cluster')
         self.grafana.kill()
         self.prometheus.kill()
-        if os.getenv('SLURM_JOBID') and int(os.getenv('SLURM_NNODES', 0)):
-            self.workers.kill()  # TODO: better way to manage workers
-        self.ray.kill()  # TODO: investigate how to properly kill Ray head
+        if self.jobid:
+            logger.info(f'<{self.name}>: Cancelling job {self.jobid}')
+            Popen(split(f'scancel {self.jobid}'))
+        elif int(os.getenv('SLURM_NNODES', 0)) > 1:
+            self.workers.kill()
+        self.ray.kill() #TODO: ray dashboard remains up

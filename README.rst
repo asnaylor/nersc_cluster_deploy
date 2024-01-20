@@ -9,120 +9,52 @@ Overview
 
     * - tests
       - | |github-actions|
-        |
-    * - package
-      - | |version| |wheel| |supported-versions| |supported-implementations|
-        | |commits-since|
 
 .. |github-actions| image:: https://github.com/asnaylor/nersc_cluster_deploy/actions/workflows/github-actions.yml/badge.svg
     :alt: GitHub Actions Build Status
     :target: https://github.com/asnaylor/nersc_cluster_deploy/actions
 
-.. |version| image:: https://img.shields.io/pypi/v/nersc-cluster-deploy.svg
-    :alt: PyPI Package latest release
-    :target: https://pypi.org/project/nersc-cluster-deploy
-
-.. |wheel| image:: https://img.shields.io/pypi/wheel/nersc-cluster-deploy.svg
-    :alt: PyPI Wheel
-    :target: https://pypi.org/project/nersc-cluster-deploy
-
-.. |supported-versions| image:: https://img.shields.io/pypi/pyversions/nersc-cluster-deploy.svg
-    :alt: Supported versions
-    :target: https://pypi.org/project/nersc-cluster-deploy
-
-.. |supported-implementations| image:: https://img.shields.io/pypi/implementation/nersc-cluster-deploy.svg
-    :alt: Supported implementations
-    :target: https://pypi.org/project/nersc-cluster-deploy
-
-.. |commits-since| image:: https://img.shields.io/github/commits-since/asnaylor/nersc_cluster_deploy/v0.1.0.svg
-    :alt: Commits since latest release
-    :target: https://github.com/asnaylor/nersc_cluster_deploy/compare/v0.1.0...main
-
-
-
 .. end-badges
 
-Deploy workflow clusters on NERSC supercomputers.
+Deploy Ray clusters on NERSC supercomputers.
 
 * Free software: GNU Lesser General Public License v3 (LGPLv3)
+
+
+Deploy Ray Easily
+============
+
+.. code-block:: python
+
+    from nersc_cluster_deploy import deploy_ray_cluster
+
+    #Create Ray Cluster with dashboard
+    rayCluster = deploy_ray_cluster(
+        slurm_options = '-q regular -a elvis -t 01:00:00 -N 3'
+        job_setup = 'module load pytorch',
+    )
+    >>> Ray cluster running at x.x.x.x:6379 
+    >>> Dashboard avaliable at https://jupyter.nersc.gov/user/elivs/proxy/localhost:8265/ with metrics
+
+    #Connect to cluster
+    import ray
+    ray.init(address='auto')
 
 Installation
 ============
 
-You can install the in-development version with::
+You can install the latest version with::
 
-    pip install git+https://github.com/asnaylor/nersc_cluster_deploy.git
+    pip install git+https://github.com/asnaylor/nersc_cluster_deploy.git@v0.3.0
 
 
 Documentation
 =============
 
-
-To use the project:
-
-.. code-block:: python
-
-    from nersc_cluster_deploy import deploy_ray_cluster
-    
-    #
-    #Start Ray Cluster (via Shared Jupyter Node)
-    ####################
-    slurm_options = {
-        'qos': 'debug',
-        'account':'<account>',
-        'nodes': '2',
-        't': '00:30:00'
-    } #Also supported
-    # slurm_options = '-q debug -a <account> --time=00:30:00 -N 2'
-
-    module_load = 'tensorflow/2.9.0'
-    rayCluster = deploy_ray_cluster(
-        slurm_options = slurm_options,
-        job_setup = f'module load {module_load}'
-    )
-    #Also supported
-    # job_setup =['module load python', 'conda activate custom_env']
-    
-
-    #
-    #Start Ray Cluster (via in slurm job)
-    ####################
-    rayCluster = deploy_ray_cluster(
-        job_setup = ['module load pytorch/1.13.1'] 
-    )
-
-
-    #
-    #Get ray cluster dashboard
-    ####################
-    print(rayCluster.ray_dashboard_url)
-    
-
-    #
-    #Connect to ray cluster
-    ####################
-    ray.init(address='auto')
+Visit the documentation `README </docs/README.md>`_ for more information.
 
 
 Tutorials
 =============
 
-For more information and examples see the `tutorial <https://github.com/asnaylor/nersc_ray_notebook>`_ repo.
-
-Development
-===========
-
-To run all the tests run::
-
-    tox
-
-Note, to combine the coverage data from all the tox environments run:
-
-.. list-table::
-    :widths: 10 90
-    :stub-columns: 1
-
-    - - Other
-      - ::
-
-            PYTEST_ADDOPTS=--cov-append tox
+For examples see the `tutorial <https://github.com/asnaylor/nersc_ray_notebook>`_ repo.

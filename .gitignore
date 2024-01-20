@@ -75,3 +75,7 @@ docs/_build
 
 #Jupyter
 .ipynb_checkpoints/
+
+#Repo specific
+*.log
+*.out
