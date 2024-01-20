@@ -6,6 +6,7 @@
 - [Deployment modes](#deployment-modes)
 - [Dashboard](#dashboard)
 - [Debugging](#debugging)
+- [Containers](#containers)
 
 
 ## Installation
