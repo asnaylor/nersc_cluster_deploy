@@ -22,9 +22,8 @@ setup(
     version='0.2.0',
     license='LGPL-3.0-only',
     description='Deploy workflow clusters on NERSC supercomputers.',
-    long_description='{}\n{}'.format(
+    long_description='{}\n'.format(
         re.compile('^.. start-badges.*^.. end-badges', re.M | re.S).sub('', read('README.rst')),
-        re.sub(':[a-z]+:`~?(.*?)`', r'``\1``', read('CHANGELOG.rst')),
     ),
     author='Andrew Naylor',
     author_email='anaylor@lbl.gov',
