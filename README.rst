@@ -30,7 +30,7 @@ Deploy Ray Easily
 
     #Create Ray Cluster with dashboard
     rayCluster = deploy_ray_cluster(
-        slurm_options = '-q regular -a elvis -t 01:00:00 -N 3'
+        slurm_options = '-q regular -A elvis -t 01:00:00 -N 3'
         job_setup = 'module load pytorch',
     )
     >>> Ray cluster running at x.x.x.x:6379 
