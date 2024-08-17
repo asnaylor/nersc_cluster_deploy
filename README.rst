@@ -45,7 +45,7 @@ Installation
 
 You can install the latest version with::
 
-    pip install git+https://github.com/asnaylor/nersc_cluster_deploy.git@v0.3.0
+    pip install git+https://github.com/asnaylor/nersc_cluster_deploy.git@v0.4.0
 
 
 Documentation

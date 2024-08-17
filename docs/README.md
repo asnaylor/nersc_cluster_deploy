@@ -13,7 +13,7 @@
 
 To install the latest version of the library:
 
-    pip install git+https://github.com/asnaylor/nersc_cluster_deploy.git@v0.3.0
+    pip install git+https://github.com/asnaylor/nersc_cluster_deploy.git@v0.4.0
 
 
 ## Deployment modes
@@ -31,7 +31,7 @@ from nersc_cluster_deploy import deploy_ray_cluster
 
 #Create Ray Cluster with dashboard
 rayCluster = deploy_ray_cluster(
-    slurm_options = '-q regular -a elvis -t 01:00:00 -N 3' #dictionaries are also supported. Long and short slurm option supported.
+    slurm_options = '-q regular -A elvis -t 01:00:00 -N 3' #dictionaries are also supported. Long and short slurm option supported.
     job_setup = 'module load pytorch', #lists are also supported
 )
 >>> Ray cluster running at x.x.x.x:6379 
